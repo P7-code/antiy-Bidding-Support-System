@@ -1,0 +1,10 @@
+# Crontab 配置 - requirementsL.txt 保护
+# 每5分钟检查一次 requirementsL.txt，如果被修改则自动恢复
+
+# 添加以下行到 crontab:
+# */5 * * * * cd /path/to/project && ./check_requirements.sh >> /tmp/requirementsL_watch.log 2>&1
+
+# 或者使用以下命令直接添加:
+# crontab -l > /tmp/crontab_backup
+# echo "*/5 * * * * cd $(pwd) && ./check_requirements.sh >> /tmp/requirementsL_watch.log 2>&1" >> /tmp/crontab_backup
+# crontab /tmp/crontab_backup
