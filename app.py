@@ -758,7 +758,7 @@ def main():
                         "workflow_type": "generate",
                         "material_type": material_type,
                         "generation_requirements": generation_requirements,
-                        "kb_path": kb_path if use_kb else "",
+                        "knowledge_base_path": kb_path if use_kb else None,
                         "use_kb": use_kb
                     }
                     
@@ -766,7 +766,12 @@ def main():
                     
                     # 运行工作流
                     with st.spinner(f"正在生成{material_type}材料，请稍候..."):
-                        result = main_graph.invoke(input_data)
+                        try:
+                            result = main_graph.invoke(input_data)
+                        except Exception as e:
+                            st.error(f"工作流执行出错: {str(e)}")
+                            logger.error(f"工作流执行错误: {e}", exc_info=True)
+                            return
                     
                     # 检查工作流执行结果
                     if result is None:

@@ -44,16 +44,25 @@ class GraphInput(BaseModel):
     bid_file: Optional[File] = Field(default=None, description="投标文件（PDF、Word等文档格式），检查模式需要")
     workflow_type: Literal["check", "generate"] = Field(default="check", description="工作流类型：check=投标文件检查，generate=投标材料生成")
     knowledge_base_path: Optional[str] = Field(default=None, description="本地知识库路径，材料生成模式下使用")
+    # 材料生成模式输入
+    material_type: Optional[Literal["commercial", "technical", "both"]] = Field(default="both", description="材料生成类型：commercial=商务材料，technical=技术材料，both=两者都生成")
+    generation_requirements: Optional[str] = Field(default="", description="额外的生成要求和补充说明")
+    kb_path: Optional[str] = Field(default="", description="知识库路径（材料生成模式）")
+    use_kb: Optional[bool] = Field(default=False, description="是否使用知识库")
 
 class GraphOutput(BaseModel):
     """工作流输出"""
-    final_modification_suggestions: str = Field(..., description="详细的投标文件修改清单和修改意见")
-    invalid_items_check: str = Field(..., description="废标项检查结果")
-    commercial_score_check: str = Field(..., description="商务得分点检查结果")
-    technical_plan_check: str = Field(..., description="技术方案检查结果")
-    indicator_response_check: str = Field(..., description="指标与应答检查结果")
-    technical_score_check: str = Field(..., description="技术得分点检测结果")
-    bid_structure_check: str = Field(..., description="投标文件结构检查结果")
+    # 检查模式输出
+    final_modification_suggestions: str = Field(default="", description="详细的投标文件修改清单和修改意见")
+    invalid_items_check: str = Field(default="", description="废标项检查结果")
+    commercial_score_check: str = Field(default="", description="商务得分点检查结果")
+    technical_plan_check: str = Field(default="", description="技术方案检查结果")
+    indicator_response_check: str = Field(default="", description="指标与应答检查结果")
+    technical_score_check: str = Field(default="", description="技术得分点检测结果")
+    bid_structure_check: str = Field(default="", description="投标文件结构检查结果")
+    # 材料生成模式输出
+    commercial_material: str = Field(default="", description="生成的商务投标材料")
+    technical_material: str = Field(default="", description="生成的技术投标材料")
 
 # ============================================
 # 各节点输入输出定义 (Node Input/Output)
