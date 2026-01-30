@@ -382,7 +382,7 @@ def commercial_material_generate_node(
 
     # 读取配置文件
     cfg_file = get_config_file_path(config['metadata']['llm_cfg'])
-    with open(cfg_file, 'r') as fd:
+    with open(cfg_file, 'r', encoding='utf-8') as fd:
         _cfg = json.load(fd)
 
     sp = _cfg.get("sp", "")
@@ -435,7 +435,7 @@ def technical_material_generate_node(
 
     # 读取配置文件
     cfg_file = get_config_file_path(config['metadata']['llm_cfg'])
-    with open(cfg_file, 'r') as fd:
+    with open(cfg_file, 'r', encoding='utf-8') as fd:
         _cfg = json.load(fd)
 
     sp = _cfg.get("sp", "")

@@ -768,6 +768,11 @@ def main():
                     with st.spinner(f"正在生成{material_type}材料，请稍候..."):
                         result = main_graph.invoke(input_data)
                     
+                    # 检查工作流执行结果
+                    if result is None:
+                        st.error("工作流执行失败，请检查输入文件和配置")
+                        return
+                    
                     # 显示生成结果
                     st.markdown('<h2 class="section-header">📋 生成结果</h2>', unsafe_allow_html=True)
                     
