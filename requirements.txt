@@ -1,61 +1,24 @@
-# 核心框架
-langgraph==1.0.2
-langchain==1.0.3
-langchain-core==1.0.2
-langchain-openai==1.0.1
-langgraph-checkpoint==3.0.0
-langgraph-checkpoint-postgres==3.0.1
-langsmith==0.4.39
+# 进入项目目录
+cd D:\code\projects\antiy-Bidding-Support-System
 
-# Web界面
-streamlit==1.53.1
-
-# 文档处理
-pypdf==6.4.1
-python-docx==1.2.0
-python-pptx==1.0.2
-docx2python==3.5.0
-reportlab==4.2.5
-
-# 数据处理
-pydantic==2.12.3
-pydantic_core==2.41.4
-numpy==2.2.6
-pandas==2.2.2
-
-# HTTP和网络
-httpx==0.28.1
-httpx-ws==0.8.2
-requests==2.32.5
-
-# 文件和编码
-chardet==5.2.0
-python-dateutil==2.9.0.post0
-openpyxl==3.1.5
-
-# 模板和配置
-Jinja2==3.1.6
-MarkupSafe==3.0.3
-pytz==2025.2
-python-dotenv==1.2.1
-
-# Coze SDK
-coze-coding-dev-sdk==0.5.6
-coze-coding-utils==0.2.2
-
-# 其他工具
-tqdm==4.67.1
-Pygments==2.19.2
-click==8.3.1
-packaging==25.0
-typing_extensions==4.15.0
-
-# 向量处理（知识库）
-tiktoken==0.12.0
-
-# 数据库（如果需要）
-SQLAlchemy==2.0.44
-psycopg-binary==3.3.0
-
-# S3存储（如果需要）
-boto3==1.40.61
+# 创建精简依赖文件
+cat > requirementsL.txt << 'EOF'
+streamlit>=1.28.0
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+pypdf>=3.0.0
+python-docx>=1.0.0
+python-pptx>=0.6.0
+docx2python>=0.9.0
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+reportlab>=4.0.0
+Pillow>=10.0.0
+jinja2>=3.1.0
+pydantic>=2.0.0
+pyyaml>=6.0.0
+EOF
