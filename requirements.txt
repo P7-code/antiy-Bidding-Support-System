@@ -1,5 +1,5 @@
-# 创建精简依赖文件
-cat > requirementsL.txt << 'EOF'
+
+
 streamlit>=1.28.0
 langgraph>=0.2.0
 langchain>=0.3.0
@@ -18,4 +18,3 @@ Pillow>=10.0.0
 jinja2>=3.1.0
 pydantic>=2.0.0
 pyyaml>=6.0.0
-EOF
