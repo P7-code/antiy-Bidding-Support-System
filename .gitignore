@@ -24,7 +24,8 @@ wheels/
 venv/
 env/
 ENV/
-.venv
+env.bak/
+venv.bak/
 
 # IDE
 .vscode/
@@ -32,43 +33,34 @@ ENV/
 *.swp
 *.swo
 *~
+.DS_Store
 
-# Streamlit
-.streamlit/secrets.toml
-
-# Coze 环境配置
-.coze.env
-
-# Environment variables
+# Environment variables (contains sensitive data)
 .env
 .env.local
+.env.*.local
 
 # Logs
 *.log
 logs/
-app.log
-
-# OS
-.DS_Store
-Thumbs.db
+*.out
 
 # Temporary files
 tmp/
 temp/
 *.tmp
-*.temp
 
-# Assets (unless tracking specific files)
-assets/*.pdf
-assets/*.docx
-assets/*.pptx
-assets/*.jpg
-assets/*.png
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
+# Streamlit
+.streamlit/secrets.toml
 
-# Model cache
-.cache/
+# Assets (user uploaded files)
+assets/knowledge_base/*
+!assets/knowledge_base/.gitkeep
+assets/temp/*
+!assets/temp/.gitkeep

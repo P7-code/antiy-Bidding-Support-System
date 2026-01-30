@@ -9,6 +9,17 @@ from typing import Dict, Any
 from datetime import datetime
 import streamlit as st
 
+# 加载环境变量
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# 确保COZE_WORKSPACE_PATH已设置（外网部署兼容）
+if not os.getenv("COZE_WORKSPACE_PATH"):
+    os.environ["COZE_WORKSPACE_PATH"] = os.path.dirname(os.path.abspath(__file__))
+
 # 添加src到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
