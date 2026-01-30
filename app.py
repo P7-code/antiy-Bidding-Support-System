@@ -853,11 +853,11 @@ def main():
                         else:
                             st.warning("⚠️ 未能生成材料，请检查输入和要求")
                 
-                    except Exception as e:
-                        st.error(f"材料生成过程出错: {str(e)}")
-                        st.error(f"错误详情: {type(e).__name__}")
-                        import traceback
-                        st.error(traceback.format_exc())
+                except Exception as e:
+                    st.error(f"材料生成过程出错: {str(e)}")
+                    st.error(f"错误详情: {type(e).__name__}")
+                    import traceback
+                    st.error(traceback.format_exc())
     
     # 页脚
     st.markdown("---")
