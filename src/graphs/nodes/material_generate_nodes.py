@@ -99,38 +99,69 @@ def knowledge_base_search_node(
 ) -> KnowledgeBaseSearchOutput:
     """
     title: 知识库检索
-    desc: 在本地知识库中检索相关素材
+    desc: 在本地知识库中检索相关素材，根据索引与摘要内容快速匹配知识信息，引用索引摘要对应文档中的相关内容
     integrations: 本地知识库
     """
     ctx = runtime.context
 
     # 初始化知识库索引工具
     indexer = KnowledgeIndexer(state.knowledge_base_path)
-    
+
     # 执行搜索
     search_indices = indexer.search_indices(state.query, direction="both", top_k=5)
 
-    # 格式化搜索结果
+    # 格式化搜索结果，增强信息内容
     formatted_results = []
     for index in search_indices:
+        # 构建章节引用信息
+        chapter_references = []
+        for chapter in index.content_summary.key_chapters:
+            chapter_ref = {
+                'chapter_title': chapter.chapter_title,
+                'page_range': chapter.page_range if chapter.page_range else "N/A",
+                'summary': chapter.summary,
+                'key_points': chapter.key_points
+            }
+            chapter_references.append(chapter_ref)
+
+        # 构建完整的结果对象
         formatted_result = {
-            'content': index.content_summary.full_summary,
-            'source': index.metadata.file_path,
-            'source_type': 'local_knowledge_base',
-            'source_doc': index.metadata.file_name,
-            'source_page': 'N/A',
-            'score': index.quality_score,
+            # 核心内容
+            'full_summary': index.content_summary.full_summary,
+            'chapters': chapter_references,
+
+            # 关键词和标签
+            'technical_keywords': index.content_summary.technical_keywords,
+            'commercial_keywords': index.content_summary.commercial_keywords,
+            'industry_tags': index.content_summary.industry_tags,
+            'search_tags': index.search_tags,
+
+            # 来源信息（用于在生成材料中标注）
+            'source': {
+                'file_path': index.metadata.file_path,
+                'file_name': index.metadata.file_name,
+                'file_type': index.metadata.file_type,
+                'file_size_kb': round(index.metadata.file_size / 1024, 2),
+                'created_at': index.metadata.created_at,
+                'modified_at': index.metadata.modified_at,
+                'indexed_at': index.metadata.indexed_at
+            },
+
+            # 质量信息
+            'quality_score': index.quality_score,
+            'direction': index.direction,
+
+            # 元数据（用于追溯和验证）
             'metadata': {
                 'file_hash': index.id,
-                'file_size': index.metadata.file_size,
-                'file_type': index.metadata.file_type,
-                'indexed_at': index.metadata.indexed_at,
-                'updated_at': index.metadata.updated_at,
-                'tags': index.search_tags,
-                'direction': index.direction
-            }
+                'is_active': index.is_active,
+                'updated_at': index.metadata.updated_at
+            },
+
+            # 引用格式（用于在生成材料中显示）
+            'citation': f"[{index.metadata.file_name} - {index.metadata.file_type.upper()}]"
         }
-        
+
         formatted_results.append(formatted_result)
 
     return KnowledgeBaseSearchOutput(
@@ -146,38 +177,69 @@ def commercial_kb_search_node(
 ) -> CommercialKBSearchOutput:
     """
     title: 商务知识库检索
-    desc: 在本地知识库中检索商务相关素材
+    desc: 在本地知识库中检索商务相关素材，根据索引与摘要内容快速匹配知识信息，引用索引摘要对应文档中的相关内容
     integrations: 本地知识库
     """
     ctx = runtime.context
 
     # 初始化知识库索引工具
     indexer = KnowledgeIndexer(state.knowledge_base_path)
-    
+
     # 执行搜索（使用商务要求作为查询）
     search_indices = indexer.search_indices(state.commercial_requirements, direction="commercial", top_k=5)
 
-    # 格式化搜索结果
+    # 格式化搜索结果，增强信息内容
     formatted_results = []
     for index in search_indices:
+        # 构建章节引用信息
+        chapter_references = []
+        for chapter in index.content_summary.key_chapters:
+            chapter_ref = {
+                'chapter_title': chapter.chapter_title,
+                'page_range': chapter.page_range if chapter.page_range else "N/A",
+                'summary': chapter.summary,
+                'key_points': chapter.key_points
+            }
+            chapter_references.append(chapter_ref)
+
+        # 构建完整的结果对象
         formatted_result = {
-            'content': index.content_summary.full_summary,
-            'source': index.metadata.file_path,
-            'source_type': 'local_knowledge_base',
-            'source_doc': index.metadata.file_name,
-            'source_page': 'N/A',
-            'score': index.quality_score,
+            # 核心内容
+            'full_summary': index.content_summary.full_summary,
+            'chapters': chapter_references,
+
+            # 关键词和标签
+            'technical_keywords': index.content_summary.technical_keywords,
+            'commercial_keywords': index.content_summary.commercial_keywords,
+            'industry_tags': index.content_summary.industry_tags,
+            'search_tags': index.search_tags,
+
+            # 来源信息（用于在生成材料中标注）
+            'source': {
+                'file_path': index.metadata.file_path,
+                'file_name': index.metadata.file_name,
+                'file_type': index.metadata.file_type,
+                'file_size_kb': round(index.metadata.file_size / 1024, 2),
+                'created_at': index.metadata.created_at,
+                'modified_at': index.metadata.modified_at,
+                'indexed_at': index.metadata.indexed_at
+            },
+
+            # 质量信息
+            'quality_score': index.quality_score,
+            'direction': index.direction,
+
+            # 元数据（用于追溯和验证）
             'metadata': {
                 'file_hash': index.id,
-                'file_size': index.metadata.file_size,
-                'file_type': index.metadata.file_type,
-                'indexed_at': index.metadata.indexed_at,
-                'updated_at': index.metadata.updated_at,
-                'tags': index.search_tags,
-                'direction': index.direction
-            }
+                'is_active': index.is_active,
+                'updated_at': index.metadata.updated_at
+            },
+
+            # 引用格式（用于在生成材料中显示）
+            'citation': f"[{index.metadata.file_name} - {index.metadata.file_type.upper()}]"
         }
-        
+
         formatted_results.append(formatted_result)
 
     return CommercialKBSearchOutput(
@@ -193,38 +255,69 @@ def technical_kb_search_node(
 ) -> TechnicalKBSearchOutput:
     """
     title: 技术知识库检索
-    desc: 在本地知识库中检索技术相关素材
+    desc: 在本地知识库中检索技术相关素材，根据索引与摘要内容快速匹配知识信息，引用索引摘要对应文档中的相关内容
     integrations: 本地知识库
     """
     ctx = runtime.context
 
     # 初始化知识库索引工具
     indexer = KnowledgeIndexer(state.knowledge_base_path)
-    
+
     # 执行搜索（使用技术要求作为查询）
     search_indices = indexer.search_indices(state.technical_requirements, direction="technical", top_k=5)
 
-    # 格式化搜索结果
+    # 格式化搜索结果，增强信息内容
     formatted_results = []
     for index in search_indices:
+        # 构建章节引用信息
+        chapter_references = []
+        for chapter in index.content_summary.key_chapters:
+            chapter_ref = {
+                'chapter_title': chapter.chapter_title,
+                'page_range': chapter.page_range if chapter.page_range else "N/A",
+                'summary': chapter.summary,
+                'key_points': chapter.key_points
+            }
+            chapter_references.append(chapter_ref)
+
+        # 构建完整的结果对象
         formatted_result = {
-            'content': index.content_summary.full_summary,
-            'source': index.metadata.file_path,
-            'source_type': 'local_knowledge_base',
-            'source_doc': index.metadata.file_name,
-            'source_page': 'N/A',
-            'score': index.quality_score,
+            # 核心内容
+            'full_summary': index.content_summary.full_summary,
+            'chapters': chapter_references,
+
+            # 关键词和标签
+            'technical_keywords': index.content_summary.technical_keywords,
+            'commercial_keywords': index.content_summary.commercial_keywords,
+            'industry_tags': index.content_summary.industry_tags,
+            'search_tags': index.search_tags,
+
+            # 来源信息（用于在生成材料中标注）
+            'source': {
+                'file_path': index.metadata.file_path,
+                'file_name': index.metadata.file_name,
+                'file_type': index.metadata.file_type,
+                'file_size_kb': round(index.metadata.file_size / 1024, 2),
+                'created_at': index.metadata.created_at,
+                'modified_at': index.metadata.modified_at,
+                'indexed_at': index.metadata.indexed_at
+            },
+
+            # 质量信息
+            'quality_score': index.quality_score,
+            'direction': index.direction,
+
+            # 元数据（用于追溯和验证）
             'metadata': {
                 'file_hash': index.id,
-                'file_size': index.metadata.file_size,
-                'file_type': index.metadata.file_type,
-                'indexed_at': index.metadata.indexed_at,
-                'updated_at': index.metadata.updated_at,
-                'tags': index.search_tags,
-                'direction': index.direction
-            }
+                'is_active': index.is_active,
+                'updated_at': index.metadata.updated_at
+            },
+
+            # 引用格式（用于在生成材料中显示）
+            'citation': f"[{index.metadata.file_name} - {index.metadata.file_type.upper()}]"
         }
-        
+
         formatted_results.append(formatted_result)
 
     return TechnicalKBSearchOutput(

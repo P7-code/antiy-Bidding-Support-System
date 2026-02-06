@@ -107,10 +107,10 @@
 | 节点名 | 文件位置 | 类型 | 功能描述 | 分支逻辑 | 配置文件 |
 |-------|---------|------|---------|---------|---------|
 | tender_requirements_parse | `nodes/material_generate_nodes.py` | agent | 解析招标文件，提取商务和技术要求 | - | `config/tender_requirements_parse_cfg.json` |
-| commercial_kb_search | `nodes/material_generate_nodes.py` | task | 商务知识库检索（使用新的索引系统） | - | - |
+| commercial_kb_search | `nodes/material_generate_nodes.py` | task | 商务知识库检索（增强版：返回章节摘要、关键词、引用格式） | - | - |
 | commercial_web_search | `nodes/material_generate_nodes.py` | task | 商务互联网搜索 | - | - |
 | commercial_material_generate | `nodes/material_generate_nodes.py` | agent | 生成商务投标材料 | - | `config/commercial_material_generate_cfg.json` |
-| technical_kb_search | `nodes/material_generate_nodes.py` | task | 技术知识库检索（使用新的索引系统） | - | - |
+| technical_kb_search | `nodes/material_generate_nodes.py` | task | 技术知识库检索（增强版：返回章节摘要、关键词、引用格式） | - | - |
 | technical_web_search | `nodes/material_generate_nodes.py` | task | 技术互联网搜索 | - | - |
 | technical_material_generate | `nodes/material_generate_nodes.py` | agent | 生成技术投标材料 | - | `config/technical_material_generate_cfg.json` |
 
@@ -163,14 +163,21 @@
 
 **并行生成分支**:
 1. **商务材料生成**:
-   - `commercial_kb_search` (知识库检索，使用新的索引系统)
+   - `commercial_kb_search` (知识库检索，增强版：返回章节摘要、关键词、引用格式)
    - `commercial_web_search` (互联网搜索)
    - `commercial_material_generate` (生成商务材料)
 
 2. **技术材料生成**:
-   - `technical_kb_search` (知识库检索，使用新的索引系统)
+   - `technical_kb_search` (知识库检索，增强版：返回章节摘要、关键词、引用格式)
    - `technical_web_search` (互联网搜索)
    - `technical_material_generate` (生成技术材料)
+
+**知识库检索增强功能**:
+- 根据索引与摘要内容快速匹配知识信息
+- 返回章节摘要（带页码范围）
+- 返回技术关键词、商务关键词、行业标签
+- 提供详细的文档信息标注（文件名、路径、大小、时间戳）
+- 生成引用格式，便于在生成材料中标注来源
 
 **结束**: 商务和技术材料都生成完成后，工作流结束
 
