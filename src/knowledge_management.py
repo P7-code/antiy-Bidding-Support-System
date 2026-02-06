@@ -298,7 +298,7 @@ def render_files_tab(indexer: KnowledgeIndexer, kb_path: str):
                                     from graphs.nodes.knowledge_manager_nodes import extract_summary_node
                                     from graphs.state_knowledge import ExtractSummaryInput
                                     from langchain_core.runnables import RunnableConfig
-                                    from langgraph.runtime import Runtime
+                                    from tools.knowledge_scheduler import MockRuntime
 
                                     try:
                                         from coze_coding_utils.runtime_ctx.context import Context
@@ -319,11 +319,20 @@ def render_files_tab(indexer: KnowledgeIndexer, kb_path: str):
                                         "config/knowledge_summary_cfg.json"
                                     )
 
-                                    config = RunnableConfig(configurable={
-                                        "llm_cfg": config_path
-                                    })
+                                    config = RunnableConfig(
+                                        metadata={"llm_cfg": config_path}
+                                    )
 
-                                    runtime = Runtime[Context](config)
+                                    # 创建 Mock Runtime
+                                    try:
+                                        runtime = MockRuntime(Context(
+                                            run_id="manual_scan_run_id",
+                                            space_id="manual_scan_space_id",
+                                            project_id="manual_scan_project_id"
+                                        ))
+                                    except TypeError:
+                                        # 如果 Context 不需要参数
+                                        runtime = MockRuntime(Context())
 
                                     result = extract_summary_node(node_input, config, runtime)
 

@@ -13,13 +13,23 @@ from graphs.state_knowledge import FileMetadata, DocumentSummary
 from graphs.nodes.knowledge_manager_nodes import extract_summary_node
 from utils.file.file import FileOps, File
 from langchain_core.runnables import RunnableConfig
-from langgraph.runtime import Runtime
 
 try:
     from coze_coding_utils.runtime_ctx.context import Context
 except ImportError:
     class Context:
         pass
+
+
+class MockRuntime:
+    """Mock Runtime 对象，用于在工作流外部调用节点函数"""
+
+    def __init__(self, context: Context = None):
+        self.context = context or Context(
+            run_id="mock_run_id",
+            space_id="mock_space_id",
+            project_id="mock_project_id"
+        )
 
 
 class KnowledgeScheduler:
@@ -103,12 +113,17 @@ class KnowledgeScheduler:
                 "config/knowledge_summary_cfg.json"
             )
 
-            config = RunnableConfig(configurable={
-                "llm_cfg": config_path
-            })
+            # 创建 RunnableConfig（LangGraph 1.0 版本中，RunnableConfig 是一个 dict）
+            config = RunnableConfig(
+                metadata={"llm_cfg": config_path}
+            )
 
-            # 创建 runtime（简化版）
-            runtime = Runtime[Context](config)
+            # 创建 Mock Runtime
+            runtime = MockRuntime(Context(
+                run_id="mock_run_id",
+                space_id="mock_space_id",
+                project_id="mock_project_id"
+            ))
 
             # 调用节点提取摘要
             result = extract_summary_node(node_input, config, runtime)
