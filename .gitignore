@@ -37,8 +37,6 @@ venv.bak/
 #知识库文件
 
 
-datafiles/
-
 # Environment variables (contains sensitive data)
 .env
 .env.local
