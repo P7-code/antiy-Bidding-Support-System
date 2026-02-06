@@ -30,3 +30,4 @@ datafiles/**/* filter=lfs diff=lfs merge=lfs -text
 *.h5 filter=lfs diff=lfs merge=lfs -text
 *.pt filter=lfs diff=lfs merge=lfs -text
 *.pth filter=lfs diff=lfs merge=lfs -text
+datafiles/**/*.{docx,pdf,pptx,txt} filter=lfs diff=lfs merge=lfs -text
