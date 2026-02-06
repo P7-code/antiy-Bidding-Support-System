@@ -79,6 +79,12 @@ def render_overview_tab(indexer: KnowledgeIndexer):
 
     stats = indexer.get_statistics()
 
+    # 系统状态提示
+    if stats['total_files'] > 0:
+        st.success("✅ 知识库索引已自动加载")
+    else:
+        st.warning("⚠️ 知识库为空，请点击'立即扫描文件'创建索引")
+
     # 统计卡片
     col1, col2, col3, col4 = st.columns(4)
 
@@ -487,6 +493,7 @@ def render_scheduler_tab(indexer: KnowledgeIndexer, kb_path: str):
     if scheduler:
         st.info(f"✅ 调度器正在运行")
         st.markdown(f"**扫描间隔**: {scheduler.interval_minutes} 分钟")
+        st.success("🎉 系统启动时已自动启动调度器")
     else:
         st.warning("⚠️ 调度器未启动")
 
@@ -502,18 +509,9 @@ def render_scheduler_tab(indexer: KnowledgeIndexer, kb_path: str):
     )
 
     # 操作按钮
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("🚀 启动调度器", type="primary"):
-            if not scheduler:
-                start_scheduler(interval_minutes=interval_minutes)
-                st.success("✅ 调度器已启动")
-                st.rerun()
-            else:
-                st.info("调度器已在运行")
-
-    with col2:
         if st.button("⏹️ 停止调度器"):
             if scheduler:
                 stop_scheduler()
@@ -522,14 +520,26 @@ def render_scheduler_tab(indexer: KnowledgeIndexer, kb_path: str):
             else:
                 st.info("调度器未运行")
 
-    with col3:
+    with col2:
         if st.button("🔄 立即扫描"):
             if scheduler:
                 scheduler.run_once()
                 st.success("✅ 扫描完成")
                 st.rerun()
             else:
-                st.warning("⚠️ 请先启动调度器")
+                st.warning("⚠️ 调度器未运行，无法扫描")
+
+    # 说明信息
+    st.markdown("---")
+    st.markdown("""
+    <div class="info-box">
+        <strong>📌 说明：</strong><br>
+        - 调度器会在系统启动时自动启动<br>
+        - 每隔设定时间自动扫描知识库目录<br>
+        - 检测文件变化（新增、修改、删除）并更新索引<br>
+        - 可手动点击"立即扫描"进行即时扫描
+    </div>
+    """, unsafe_allow_html=True)
 
     # 日志查看
     st.markdown('<h3 class="subsection-header">📋 运行日志</h3>', unsafe_allow_html=True)

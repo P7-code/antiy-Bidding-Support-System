@@ -39,6 +39,86 @@ from reportlab.pdfbase.ttfonts import TTFont
 import shutil
 from src.knowledge_management import show_knowledge_management_page
 
+# 配置应用日志
+import logging
+
+# 创建日志目录
+log_dir = os.path.join(os.getenv("COZE_WORKSPACE_PATH", "."), "app/work/logs/bypass")
+os.makedirs(log_dir, exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(log_dir, "app.log"), encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+
+def initialize_knowledge_system():
+    """
+    初始化知识库系统
+    - 自动加载知识库索引
+    - 自动启动调度器
+    """
+    logger.info("="*80)
+    logger.info("【系统启动】初始化知识库系统")
+    logger.info("="*80)
+
+    # 1. 自动加载知识库索引
+    try:
+        from src.tools.knowledge_indexer import KnowledgeIndexer
+
+        # 默认知识库路径
+        kb_path = "datafiles"
+
+        if os.path.exists(kb_path):
+            logger.info(f"发现知识库目录: {kb_path}")
+            indexer = KnowledgeIndexer(kb_path)
+
+            # 检查索引文件是否存在
+            if indexer.index_file.exists():
+                stats = indexer.get_statistics()
+                logger.info(f"✅ 知识库索引加载成功")
+                logger.info(f"   总文件数: {stats['total_files']}")
+                logger.info(f"   总大小: {stats['total_size']/1024/1024:.2f} MB")
+                logger.info(f"   技术文档: {stats['technical_count']}")
+                logger.info(f"   商务文档: {stats['commercial_count']}")
+                logger.info(f"   最后更新: {stats['last_updated']}")
+            else:
+                logger.warning(f"⚠️ 索引文件不存在: {indexer.index_file}")
+                logger.info(f"   提示: 请在知识库管理页面点击'立即扫描文件'创建索引")
+        else:
+            logger.warning(f"⚠️ 知识库目录不存在: {kb_path}")
+            logger.info(f"   提示: 请创建知识库目录并添加文档")
+
+    except Exception as e:
+        logger.error(f"❌ 加载知识库索引失败: {e}", exc_info=True)
+
+    # 2. 自动启动调度器
+    try:
+        from src.tools.knowledge_scheduler import get_scheduler, start_scheduler
+
+        scheduler = get_scheduler()
+
+        if scheduler and scheduler.is_running:
+            logger.info("✅ 知识库调度器已运行")
+            logger.info(f"   扫描间隔: {scheduler.interval_minutes} 分钟")
+        else:
+            logger.info("启动知识库调度器...")
+            start_scheduler()
+            logger.info("✅ 知识库调度器启动成功")
+            logger.info(f"   扫描间隔: 15 分钟")
+
+    except Exception as e:
+        logger.error(f"❌ 启动知识库调度器失败: {e}", exc_info=True)
+
+    logger.info("="*80)
+    logger.info("【系统启动】知识库系统初始化完成")
+    logger.info("="*80)
+
 
 # 页面配置
 st.set_page_config(
@@ -420,7 +500,12 @@ def validate_and_fix_workflow_type(input_data: dict) -> dict:
 
 def main():
     """主函数"""
-    
+
+    # 初始化知识库系统（仅在首次运行时执行）
+    if 'knowledge_system_initialized' not in st.session_state:
+        initialize_knowledge_system()
+        st.session_state['knowledge_system_initialized'] = True
+
     # 标题
     st.markdown('<h1 class="main-title">🤖 售前投标AI辅助系统</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">智能分析招标文件，辅助投标材料生成，提升投标成功率</p>', unsafe_allow_html=True)
