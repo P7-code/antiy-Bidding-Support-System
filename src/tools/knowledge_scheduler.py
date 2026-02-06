@@ -74,8 +74,13 @@ class KnowledgeScheduler:
         try:
             # 提取文件内容
             file_path = self.knowledge_dir + '/' + file_metadata.file_path
+
+            # 映射到 File 类的标准类型
+            document_types = ['pdf', 'docx', 'pptx', 'txt', 'doc', 'ppt', 'xls', 'xlsx', 'md']
+            standard_file_type = 'document' if file_metadata.file_type.lower() in document_types else 'default'
+
             content, structure = FileOps.extract_text_with_structure(
-                File(url=file_path, file_type=file_metadata.file_type)
+                File(url=file_path, file_type=standard_file_type)
             )
 
             if not content:

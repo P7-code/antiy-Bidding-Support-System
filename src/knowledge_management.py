@@ -275,13 +275,96 @@ def render_files_tab(indexer: KnowledgeIndexer, kb_path: str):
 
     with col1:
         if st.button("🔄 立即扫描文件", type="primary"):
-            scheduler = get_scheduler()
-            if scheduler:
-                scheduler.run_once()
-                st.success("✅ 扫描完成")
-                st.rerun()
-            else:
-                st.warning("⚠️ 调度器未启动，请先启动调度器")
+            # 直接执行扫描，不依赖调度器
+            try:
+                with st.spinner("正在扫描文件..."):
+                    # 扫描文件变化
+                    all_files, new_files, modified_files, deleted_files = indexer.scan_files()
+
+                    if not new_files and not modified_files:
+                        st.info("📄 没有发现新文件或修改的文件")
+                    else:
+                        st.info(f"发现变化: {len(new_files)} 个新文件, {len(modified_files)} 个修改文件")
+
+                        # 处理文件
+                        processed_count = 0
+                        for file_metadata in new_files + modified_files:
+                            try:
+                                # 提取内容
+                                content, structure = indexer.extract_file_content(file_metadata)
+
+                                if content:
+                                    # 调用 LLM 提取摘要
+                                    from graphs.nodes.knowledge_manager_nodes import extract_summary_node
+                                    from graphs.state_knowledge import ExtractSummaryInput
+                                    from langchain_core.runnables import RunnableConfig
+                                    from langgraph.runtime import Runtime
+
+                                    try:
+                                        from coze_coding_utils.runtime_ctx.context import Context
+                                    except ImportError:
+                                        class Context:
+                                            pass
+
+                                    node_input = ExtractSummaryInput(
+                                        file_metadata=file_metadata,
+                                        file_content=content,
+                                        file_structure=structure
+                                    )
+
+                                    import os
+                                    import json
+                                    config_path = os.path.join(
+                                        os.getenv("COZE_WORKSPACE_PATH", "."),
+                                        "config/knowledge_summary_cfg.json"
+                                    )
+
+                                    config = RunnableConfig(configurable={
+                                        "llm_cfg": config_path
+                                    })
+
+                                    runtime = Runtime[Context](config)
+
+                                    result = extract_summary_node(node_input, config, runtime)
+
+                                    if result.summary:
+                                        # 创建标签
+                                        search_tags = []
+                                        search_tags.extend(result.summary.technical_keywords)
+                                        search_tags.extend(result.summary.commercial_keywords)
+                                        search_tags.extend(result.summary.industry_tags)
+
+                                        # 创建索引
+                                        from graphs.state_knowledge import KnowledgeIndex
+                                        index = KnowledgeIndex(
+                                            id=file_metadata.file_hash,
+                                            metadata=file_metadata,
+                                            content_summary=result.summary,
+                                            search_tags=search_tags,
+                                            direction=result.summary.direction,  # type: ignore
+                                            quality_score=0.8,
+                                            is_active=True
+                                        )
+
+                                        indexer.add_index(index)
+                                        processed_count += 1
+                                    else:
+                                        st.warning(f"⚠️ 无法提取摘要: {file_metadata.file_name}")
+                            except Exception as e:
+                                st.error(f"❌ 处理文件失败 {file_metadata.file_name}: {e}")
+
+                        # 删除已删除的文件索引
+                        for file_hash in deleted_files:
+                            indexer.delete_index(file_hash)
+
+                        if processed_count > 0:
+                            st.success(f"✅ 扫描完成，成功处理 {processed_count} 个文件")
+                            st.rerun()
+                        else:
+                            st.warning("⚠️ 扫描完成，但没有成功处理任何文件")
+
+            except Exception as e:
+                st.error(f"❌ 扫描失败: {e}")
 
     with col2:
         if st.button("📥 手动上传文件"):

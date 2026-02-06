@@ -81,6 +81,22 @@ class KnowledgeIndexer:
         }
         return type_map.get(suffix, 'unknown')
 
+    def _map_to_file_standard_type(self, file_type: str) -> str:
+        """
+        将具体文件类型映射到 File 类的标准类型
+
+        Args:
+            file_type: 具体文件类型 (pdf, docx, pptx, txt等)
+
+        Returns:
+            File 类标准类型 (document, default等)
+        """
+        # 文档类型统一映射为 'document'
+        document_types = ['pdf', 'docx', 'pptx', 'txt', 'doc', 'ppt', 'xls', 'xlsx', 'md']
+        if file_type.lower() in document_types:
+            return 'document'
+        return 'default'
+
     def scan_files(self) -> tuple[List[FileMetadata], List[FileMetadata], List[FileMetadata], List[str]]:
         """
         扫描知识库目录，检测文件变化
@@ -161,7 +177,9 @@ class KnowledgeIndexer:
             return "", ""
 
         try:
-            file = File(url=str(file_path), file_type=file_metadata.file_type)
+            # 映射到 File 类的标准类型
+            standard_file_type = self._map_to_file_standard_type(file_metadata.file_type)
+            file = File(url=str(file_path), file_type=standard_file_type)
             content, structure = FileOps.extract_text_with_structure(file)
             return content, structure
         except Exception as e:
