@@ -350,7 +350,7 @@ def render_files_tab(indexer: KnowledgeIndexer, kb_path: str):
                                             metadata=file_metadata,
                                             content_summary=result.summary,
                                             search_tags=search_tags,
-                                            direction=result.summary.direction,  # type: ignore
+                                            direction=result.direction,  # type: ignore
                                             quality_score=0.8,
                                             is_active=True
                                         )

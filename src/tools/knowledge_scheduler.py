@@ -71,7 +71,7 @@ class KnowledgeScheduler:
         console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         self.logger.addHandler(console_handler)
 
-    def _extract_summary(self, file_metadata: FileMetadata) -> Optional[DocumentSummary]:
+    def _extract_summary(self, file_metadata: FileMetadata) -> tuple[Optional[DocumentSummary], Optional[str]]:
         """
         提取文件摘要
 
@@ -79,7 +79,7 @@ class KnowledgeScheduler:
             file_metadata: 文件元信息
 
         Returns:
-            文档摘要，失败返回 None
+            (文档摘要, 知识方向)，失败返回 (None, None)
         """
         try:
             # 提取文件内容
@@ -95,7 +95,7 @@ class KnowledgeScheduler:
 
             if not content:
                 self.logger.warning(f"文件内容为空: {file_metadata.file_name}")
-                return None
+                return None, None
 
             # 创建节点输入
             from graphs.state_knowledge import ExtractSummaryInput
@@ -128,11 +128,11 @@ class KnowledgeScheduler:
             # 调用节点提取摘要
             result = extract_summary_node(node_input, config, runtime)
 
-            return result.summary
+            return result.summary, result.direction
 
         except Exception as e:
             self.logger.error(f"提取摘要失败: {file_metadata.file_name}, 错误: {e}")
-            return None
+            return None, None
 
     def _process_file(self, file_metadata: FileMetadata):
         """
@@ -144,12 +144,16 @@ class KnowledgeScheduler:
         try:
             self.logger.info(f"正在处理文件: {file_metadata.file_name}")
 
-            # 提取摘要
-            summary = self._extract_summary(file_metadata)
+            # 提取摘要和方向
+            summary, direction = self._extract_summary(file_metadata)
 
             if not summary:
                 self.logger.warning(f"摘要提取失败，跳过: {file_metadata.file_name}")
                 return
+
+            if not direction:
+                # 如果没有方向，根据关键词数量判断
+                direction = "both"  # 默认为两者
 
             # 提取标签
             search_tags = []
@@ -164,7 +168,7 @@ class KnowledgeScheduler:
                 metadata=file_metadata,
                 content_summary=summary,
                 search_tags=search_tags,
-                direction=summary.direction,  # type: ignore
+                direction=direction,  # type: ignore
                 quality_score=0.8,  # 默认质量评分
                 is_active=True
             )
