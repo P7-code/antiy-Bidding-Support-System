@@ -1,0 +1,98 @@
+graph TB
+    Start([开始]) --> TenderParse[tender_doc_parse<br/>招标文件解析]
+    TenderParse --> Route{route_by_workflow<br/>workflow路由}
+
+    %% 检查分支 (check_workflow)
+    Route -->|check| BidParse[bid_doc_parse<br/>投标文件解析]
+    BidParse --> Merge1[(汇聚节点1)]
+    Merge1 --> InvalidCheck[invalid_items_check<br/>废标项检查<br/>大语言模型]
+    Merge1 --> CommercialCheck[commercial_score_check<br/>商务得分检查<br/>大语言模型]
+    Merge1 --> TechnicalPlanCheck[technical_plan_check<br/>技术方案检查<br/>大语言模型]
+    Merge1 --> IndicatorCheck[indicator_response_check<br/>指标应答检查<br/>大语言模型]
+    Merge1 --> TechnicalScoreCheck[technical_score_check<br/>技术得分检查<br/>大语言模型]
+    Merge1 --> StructureCheck[bid_structure_check<br/>文件结构检查<br/>大语言模型]
+
+    InvalidCheck --> Summary[modification_summary<br/>修改建议汇总<br/>大语言模型]
+    CommercialCheck --> Summary
+    TechnicalPlanCheck --> Summary
+    IndicatorCheck --> Summary
+    TechnicalScoreCheck --> Summary
+    StructureCheck --> Summary
+
+    Summary --> End([结束])
+
+    %% 生成分支 (generate)
+    Route -->|generate| RequirementsParse[tender_requirements_parse<br/>招标要求解析<br/>大语言模型]
+    RequirementsParse --> HumanNode([人工节点<br/>人工审核])
+    HumanNode --> Merge2[(汇聚节点2)]
+    Merge2 --> CommercialKB[commercial_kb_search<br/>商务知识库检索<br/>本地知识库]
+    Merge2 --> TechnicalKB[technical_kb_search<br/>技术知识库检索<br/>本地知识库]
+    Merge2 --> CommercialWeb[commercial_web_search<br/>商务互联网搜索<br/>联网搜索]
+    Merge2 --> TechnicalWeb[technical_web_search<br/>技术互联网搜索<br/>联网搜索]
+
+    CommercialKB --> Merge3[(汇聚节点3)]
+    TechnicalKB --> Merge3
+    CommercialWeb --> Merge3
+    TechnicalWeb --> Merge3
+
+    Merge3 --> CommercialGenerate[commercial_material_generate<br/>商务材料生成<br/>大语言模型]
+    Merge3 --> TechnicalGenerate[technical_material_generate<br/>技术材料生成<br/>大语言模型]
+
+    CommercialGenerate --> End
+    TechnicalGenerate --> End
+
+    %% 知识库管理分支 (knowledge)
+    Route -->|knowledge| KBUpsert[知识库管理页面<br/>独立模块]
+
+    KBUpsert --> Overview[📊 概览标签页]
+    KBUpsert --> FileIndex[📄 文件索引标签页]
+    KBUpsert --> EditIndex[✏️ 编辑索引标签页]
+    KBUpsert --> Scheduler[⚙️ 定时任务标签页]
+
+    Overview --> KBIndexer[KnowledgeIndexer<br/>索引管理工具]
+    FileIndex --> KBIndexer
+    EditIndex --> KBIndexer
+
+    Scheduler --> KBScheduler[KnowledgeScheduler<br/>定时调度器<br/>15分钟周期]
+
+    KBIndexer --> Storage[数据存储<br/>knowledge_index.json]
+    KBScheduler --> Logs[日志存储<br/>knowledge_scheduler.log]
+
+    Storage --> End
+    Logs --> End
+
+    %% 样式定义
+    style Start fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style End fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style Route fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style Merge1 fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style Merge2 fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style Merge3 fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style HumanNode fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+
+    %% 大语言模型节点
+    style InvalidCheck fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style CommercialCheck fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style TechnicalPlanCheck fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style IndicatorCheck fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style TechnicalScoreCheck fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style StructureCheck fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style RequirementsParse fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style Summary fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style CommercialGenerate fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+    style TechnicalGenerate fill:#c8e6c9,stroke:#2e7d32,stroke-width:1px
+
+    %% 本地知识库节点
+    style CommercialKB fill:#b3e5fc,stroke:#0277bd,stroke-width:1px
+    style TechnicalKB fill:#b3e5fc,stroke:#0277bd,stroke-width:1px
+
+    %% 联网搜索节点
+    style CommercialWeb fill:#ffccbc,stroke:#d84315,stroke-width:1px
+    style TechnicalWeb fill:#ffccbc,stroke:#d84315,stroke-width:1px
+
+    %% 知识库管理模块
+    style KBUpsert fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    style Overview fill:#f8bbd0,stroke:#880e4f,stroke-width:1px
+    style FileIndex fill:#f8bbd0,stroke:#880e4f,stroke-width:1px
+    style EditIndex fill:#f8bbd0,stroke:#880e4f,stroke-width:1px
+    style Scheduler fill:#f8bbd0,stroke:#880e4f,stroke-width:1px

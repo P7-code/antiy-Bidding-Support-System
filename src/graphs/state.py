@@ -23,7 +23,7 @@ class GlobalState(BaseModel):
     final_modification_suggestions: str = Field(default="", description="最终修改建议汇总")
 
     # 投标材料生成相关状态
-    workflow_type: Literal["check", "generate"] = Field(default="check", description="工作流类型：check=检查，generate=生成材料")
+    workflow_type: Literal["check", "generate", "knowledge"] = Field(default="check", description="工作流类型：check=检查，generate=生成材料，knowledge=知识库管理")
     commercial_requirements: str = Field(default="", description="商务要求内容")
     technical_requirements: str = Field(default="", description="技术要求内容")
     commercial_template: str = Field(default="", description="商务材料模板（如果有）")
@@ -42,7 +42,7 @@ class GraphInput(BaseModel):
     """工作流输入"""
     tender_file: File = Field(..., description="招标文件（PDF、Word等文档格式）")
     bid_file: Optional[File] = Field(default=None, description="投标文件（PDF、Word等文档格式），检查模式需要")
-    workflow_type: Literal["check", "generate"] = Field(default="check", description="工作流类型：check=投标文件检查，generate=投标材料生成")
+    workflow_type: Literal["check", "generate", "knowledge"] = Field(default="check", description="工作流类型：check=投标文件检查，generate=投标材料生成，knowledge=知识库管理")
     knowledge_base_path: Optional[str] = Field(default=None, description="本地知识库路径，材料生成模式下使用")
     # 材料生成模式输入
     material_type: Optional[Literal["commercial", "technical", "both"]] = Field(default="both", description="材料生成类型：commercial=商务材料，technical=技术材料，both=两者都生成")
@@ -168,3 +168,21 @@ class BidStructureCheckInput(BaseModel):
 class BidStructureCheckOutput(BaseModel):
     """投标文件结构检查节点输出"""
     bid_structure_check: str = Field(..., description="投标文件结构检查结果，包括目录完整性、缺失项、排布问题及优化建议")
+
+# 知识库管理节点（占位节点）
+class KnowledgeManagementInput(BaseModel):
+    """知识库管理节点输入"""
+    knowledge_base_path: Optional[str] = Field(default=None, description="知识库路径")
+
+class KnowledgeManagementOutput(BaseModel):
+    """知识库管理节点输出"""
+    message: str = Field(default="知识库管理是独立功能模块，请通过 Streamlit UI 访问", description="提示信息")
+
+# 路由节点（用于工作流类型路由）
+class RouteWorkflowInput(BaseModel):
+    """路由节点输入"""
+    workflow_type: Literal["check", "generate", "knowledge"] = Field(..., description="工作流类型")
+
+class RouteWorkflowOutput(BaseModel):
+    """路由节点输出"""
+    workflow_type: Literal["check", "generate", "knowledge"] = Field(..., description="工作流类型")

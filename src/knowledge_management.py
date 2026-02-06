@@ -4,10 +4,36 @@
 """
 import streamlit as st
 import os
+import sys
 from datetime import datetime
 
-from tools.knowledge_indexer import KnowledgeIndexer
-from tools.knowledge_scheduler import get_scheduler, start_scheduler, stop_scheduler
+# 添加 src 到路径（如果还没有）
+# 支持多种部署环境
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+try:
+    from tools.knowledge_indexer import KnowledgeIndexer
+    from tools.knowledge_scheduler import get_scheduler, start_scheduler, stop_scheduler
+except ImportError:
+    # 如果上面的导入失败，尝试从 src.tools 导入
+    try:
+        from src.tools.knowledge_indexer import KnowledgeIndexer
+        from src.tools.knowledge_scheduler import get_scheduler, start_scheduler, stop_scheduler
+    except ImportError:
+        # 最后的尝试：直接从项目根目录导入
+        import sys
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        from tools.knowledge_indexer import KnowledgeIndexer
+        from tools.knowledge_scheduler import get_scheduler, start_scheduler, stop_scheduler
 
 
 def show_knowledge_management_page(kb_path: str):

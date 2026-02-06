@@ -9,9 +9,13 @@
 
 ### 开发文档
 - **DEVELOPMENT.md** - 完整的开发文档（功能介绍、技术架构、业务流程、使用说明）
+- **WORKFLOW_ARCHITECTURE.md** - 工作流完整架构图（三大流程分支详解、汇聚节点、人工节点）
+- **WORKFLOW_QUICK_GUIDE.md** - 工作流快速指南（简化版流程图、核心节点说明）
+- **workflow_diagram.mmd** - Mermaid 流程图（可视化工作流结构）
+- **IMAGE_ANALYSIS_REPORT.md** - 流程图分析报告（基于用户提供的流程图图片）
 
 ### 配置文档
-- **AGENTS.md** - 工作流节点清单和架构说明
+- **AGENTS.md** - 工作流节点清单和架构说明（包含用户流程图结构说明）
 - **COZE_ENV_CONFIG.md** - Coze 环境配置说明
 - **COZE_DEBUG_GUIDE.md** - Coze 调试指南
 

@@ -1,6 +1,90 @@
 ## 项目概述
 - **名称**: 安天投标文件智能分析系统
-- **功能**: 基于 LangGraph 的智能招标文件分析系统，专为网络安全售前工程师设计。提供投标文件智能检查和投标材料自动生成两大核心功能。
+- **功能**: 基于 LangGraph 的智能招标文件分析系统，专为网络安全售前工程师设计。提供投标文件智能检查、投标材料自动生成和本地知识库管理三大核心功能。
+- **架构**: 采用 Streamlit Web 界面 + LangGraph 工作流引擎，通过条件路由实现三大功能模块的分离。
+
+### 系统流程总览
+
+系统从开始节点（`__start__`）后，通过 `workflow_type` 参数分为三个主要分支：
+
+1. **投标文件检查流程** (workflow_type = "check")
+   - 9 个节点，六维并行检测
+   - 输入：招标文件 + 投标文件
+   - 输出：修改建议报告
+
+2. **投标材料生成流程** (workflow_type = "generate")
+   - 8 个节点，并行生成商务和技术材料
+   - 输入：招标文件
+   - 输出：商务材料 + 技术材料
+
+3. **知识库管理模块** (workflow_type = "knowledge")
+   - 4 个功能标签页 + 后台服务
+   - 输入：知识文档
+   - 输出：索引文件
+
+详细流程图请参考：
+- [完整流程架构文档](docs/WORKFLOW_ARCHITECTURE.md)
+- [快速流程指南](WORKFLOW_QUICK_GUIDE.md)
+- [Mermaid 流程图](docs/workflow_diagram.mmd)
+
+### 用户流程图结构说明
+
+根据实际流程图分析，系统结构如下：
+
+```
+开始 → route_workflow → [分支处理] → 结束
+                         │
+        ┌────────────────┴────────────────┐
+        │                                 │
+        ▼                                 ▼
+  投标文件检查分支                    材料生成分支
+        │                                 │
+        ▼                                 ▼
+  tender_doc_parse (招标文件解析)       tender_doc_parse (招标文件解析)
+        │                                 │
+        ▼                                 ▼
+  [条件路由]                       tender_requirements_parse
+        │                                 │
+        ▼                                 ▼
+  bid_doc_parse                   [四路并行检索]
+        │                                 │
+        ▼                                 ▼
+  [六维并行检查]                   [材料生成]
+        │                                 │
+        └─────────────────┬─────────────────┘
+                          │
+                          ▼
+                   结束
+```
+
+**关键节点说明**：
+
+1. **route_workflow**（工作流路由）：
+   - 位置：开始节点后，根据 `workflow_type` 参数路由
+   - 分支：
+     - `check` → tender_doc_parse（投标文件检查分支）
+     - `generate` → tender_doc_parse（材料生成分支）
+     - `knowledge` → knowledge_management（知识库管理模块）
+
+2. **tender_doc_parse**（招标文件解析）：
+   - 位置：在工作路由之后，每个分支独立调用
+   - 功能：解析招标文件，提取文本内容和结构
+   - 注意：两个分支共享同一个解析节点
+
+3. **条件路由（route_after_tender_parse）**：
+   - 位置：招标文件解析后
+   - 功能：根据 `workflow_type` 再次路由
+   - 分支：
+     - `check` → bid_doc_parse（投标文件检查）
+     - `generate` → tender_requirements_parse（招标要求解析）
+
+4. **汇聚节点**（小圆圈图标）：
+   - 检查流程：汇聚六个并行检查任务的输出
+   - 生成流程：汇聚四个检索任务的输出
+
+5. **并行任务**：
+   - 检查流程：六个维度检查任务并行执行
+   - 生成流程：四个检索任务并行执行
 
 ### 节点清单
 
@@ -16,7 +100,8 @@
 | technical_score_check | `node.py` | agent | 技术得分点检查 | - | `config/technical_score_check_cfg.json` |
 | bid_structure_check | `node.py` | agent | 投标文件结构检查 | - | `config/bid_structure_check_cfg.json` |
 | modification_summary | `node.py` | agent | 结果汇总与建议生成 | - | `config/modification_summary_cfg.json` |
-| route_by_workflow_type | `graph.py` | condition | 工作流类型路由 | check→check_workflow, generate→tender_requirements_parse | - |
+| route_workflow | `graph.py` | condition | 工作流类型路由（入口） | check→tender_doc_parse, generate→tender_doc_parse, knowledge→knowledge_management | - |
+| route_after_tender_parse | `graph.py` | condition | 招标文件解析后路由 | check→bid_doc_parse, generate→tender_requirements_parse | - |
 
 #### 投标材料生成流程
 | 节点名 | 文件位置 | 类型 | 功能描述 | 分支逻辑 | 配置文件 |
@@ -29,7 +114,12 @@
 | technical_web_search | `nodes/material_generate_nodes.py` | task | 技术互联网搜索 | - | - |
 | technical_material_generate | `nodes/material_generate_nodes.py` | agent | 生成技术投标材料 | - | `config/technical_material_generate_cfg.json` |
 
-#### 知识库管理流程
+#### 知识库管理流程（主图占位节点）
+| 节点名 | 文件位置 | 类型 | 功能描述 | 分支逻辑 | 配置文件 |
+|-------|---------|------|---------|---------|---------|
+| knowledge_management | `graph.py` | task | 知识库管理占位节点（独立功能模块） | - | - |
+
+#### 知识库管理流程（详细节点 - 通过 Streamlit UI 调用）
 | 节点名 | 文件位置 | 类型 | 功能描述 | 分支逻辑 | 配置文件 |
 |-------|---------|------|---------|---------|---------|
 | scan_and_index_files | `nodes/knowledge_manager_nodes.py` | task | 扫描 datafiles 目录并更新索引 | - | - |
@@ -134,6 +224,83 @@
 - `workflow_type="generate"` → 进入投标材料生成流程
 
 ## 工作流架构
+
+### 系统整体架构（三分支流程）
+
+```
+                            ┌─────────────────────────────────────┐
+                            │         Streamlit Web 应用          │
+                            │              (app.py)               │
+                            └─────────────────────┬───────────────┘
+                                                  │
+                         用户选择功能             │
+                                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                           Node: [id: __start__; title: 开始]                        │
+│                                                                             workflow_type 参数决定分支
+└────────────────────────────────────┬────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+                    ┌────────────────────────────────┐
+                    │   route_by_workflow_type        │  ◄─── 条件路由节点
+                    │    (判断 workflow_type)         │
+                    └────┬───────────────┬────────────┘
+                         │               │
+         ┌───────────────┘               └──────────────┐
+         │ workflow_type = "check"                   │ workflow_type = "generate"
+         │                                           │ workflow_type = "knowledge"
+         ▼                                           ▼
+┌──────────────────┐                     ┌──────────────────┐
+│ 投标文件检查流程  │                     │ 投标材料生成流程  │
+│  (Check Flow)   │                     │ (Generate Flow)  │
+│                 │                     │                 │
+│ 9 个节点       │                     │ 8 个节点        │
+│ - 废标项检查   │                     │ - 招标要求解析   │
+│ - 商务得分检查 │                     │ - 知识库检索     │
+│ - 技术方案检查 │                     │ - 互联网搜索     │
+│ - 指标应答检查 │                     │ - 材料生成       │
+│ - 技术得分检查 │                     │                 │
+│ - 文件结构检查 │                     │                 │
+│ - 结果汇总     │                     │                 │
+│                 │                     │                 │
+└────────┬─────────┘                     └────────┬─────────┘
+         │                                         │
+         │                                         │
+         └───────────────┬─────────────────────────┘
+                         │
+                         ▼
+            ┌──────────────────────────────┐
+            │   Node: [id: __end__;       │
+            │        title: 结束]         │
+            └──────────────────────────────┘
+
+
+                    ┌──────────────────────────────────┐
+                    │   知识库管理模块                  │
+                    │   (Knowledge Management)         │
+                    │                                  │
+                    │  4 个功能标签页                  │
+                    │  - 📊 概览                       │
+                    │  - 📄 文件索引                   │
+                    │  - ✏️ 编辑索引                   │
+                    │  - ⚙️ 定时任务                   │
+                    │                                  │
+                    │  后端组件                        │
+                    │  - KnowledgeIndexer              │
+                    │  - KnowledgeScheduler            │
+                    │                                  │
+                    │  数据存储                        │
+                    │  - knowledge_index.json          │
+                    │  - knowledge_scheduler.log       │
+                    │  - datafiles/                    │
+                    └──────────────────────────────────┘
+```
+
+### 路由逻辑
+通过 `route_by_workflow_type` 条件节点根据 `workflow_type` 参数路由：
+- `workflow_type="check"` → 进入投标文件检查流程
+- `workflow_type="generate"` → 进入投标材料生成流程
+- `workflow_type="knowledge"` → 进入知识库管理模块
 
 ### 检查模式架构（workflow_type = "check"）
 

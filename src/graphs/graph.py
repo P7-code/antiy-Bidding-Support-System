@@ -11,7 +11,11 @@ except ImportError:
 from graphs.state import (
     GlobalState,
     GraphInput,
-    GraphOutput
+    GraphOutput,
+    KnowledgeManagementInput,
+    KnowledgeManagementOutput,
+    RouteWorkflowInput,
+    RouteWorkflowOutput
 )
 
 from graphs.node import (
@@ -37,15 +41,54 @@ from graphs.nodes.material_generate_nodes import (
     technical_material_generate_node
 )
 
+# 知识库管理占位节点
+def knowledge_management_node(
+    state: KnowledgeManagementInput,
+    config: RunnableConfig,
+    runtime: Runtime[Context]
+) -> KnowledgeManagementOutput:
+    """
+    title: 知识库管理模块
+    desc: 知识库管理是独立的功能模块，通过 Streamlit UI 提供四个功能标签页：概览、文件索引、编辑索引、定时任务
+    integrations:
+    """
+    ctx = runtime.context
+    
+    # 知识库管理是独立功能，不通过工作流调用
+    # 此节点仅为占位，实际功能在 app.py 中实现
+    return KnowledgeManagementOutput(
+        message="知识库管理是独立功能模块，请通过 Streamlit UI 访问"
+    )
+
+# 路由节点（工作流入口）
+def route_workflow_node(
+    state: RouteWorkflowInput,
+    config: RunnableConfig,
+    runtime: Runtime[Context]
+) -> RouteWorkflowOutput:
+    """
+    title: 工作流路由
+    desc: 根据工作流类型参数（check/generate/knowledge）路由到不同的流程分支
+    """
+    ctx = runtime.context
+    
+    # 路由节点只是传递 workflow_type，实际的分支逻辑由 add_conditional_edges 处理
+    return RouteWorkflowOutput(
+        workflow_type=state.workflow_type
+    )
+
 # 工作流类型选择函数
 def route_by_workflow_type(state: GlobalState) -> str:
     """
-    根据工作流类型路由到不同的流程
+    title: 工作流类型分支
+    desc: 根据工作流类型参数（check/generate/knowledge）路由到不同的流程分支
     """
     if state.workflow_type == "generate":
-        return "tender_requirements_parse"
+        return "材料生成"
+    elif state.workflow_type == "knowledge":
+        return "知识库管理"
     else:
-        return "check_workflow"
+        return "投标文件检查"
 
 
 # 创建状态图，指定入参和出参
@@ -92,16 +135,43 @@ builder.add_node(
     metadata={"type": "agent", "llm_cfg": "config/technical_material_generate_cfg.json"}
 )
 
-# 设置入口点
-builder.set_entry_point("tender_doc_parse")
+# 添加知识库管理节点（独立功能模块的占位节点）
+builder.add_node("knowledge_management", knowledge_management_node)
 
-# 添加条件边：根据工作流类型路由
+# 添加路由节点（工作流入口）
+builder.add_node("route_workflow", route_workflow_node)
+
+# 设置入口点为路由节点
+builder.set_entry_point("route_workflow")
+
+# 添加条件边：根据工作流类型路由到各个分支的招标文件解析节点
 builder.add_conditional_edges(
-    source="tender_doc_parse",
+    source="route_workflow",
     path=route_by_workflow_type,
     path_map={
-        "check_workflow": "bid_doc_parse",
-        "tender_requirements_parse": "tender_requirements_parse"
+        "投标文件检查": "tender_doc_parse",
+        "材料生成": "tender_doc_parse",
+        "知识库管理": "knowledge_management"
+    }
+)
+
+# 招标文件解析后的路由：再次根据工作流类型路由
+def route_after_tender_parse(state: GlobalState) -> str:
+    """
+    title: 招标文件解析后路由
+    desc: 根据工作流类型参数路由到下一节点
+    """
+    if state.workflow_type == "generate":
+        return "材料生成"
+    else:
+        return "投标文件检查"
+
+builder.add_conditional_edges(
+    source="tender_doc_parse",
+    path=route_after_tender_parse,
+    path_map={
+        "投标文件检查": "bid_doc_parse",
+        "材料生成": "tender_requirements_parse"
     }
 )
 
@@ -132,6 +202,9 @@ builder.add_edge(["commercial_material_generate", "technical_material_generate"]
 
 # 检查流程结束
 builder.add_edge("modification_summary", END)
+
+# 知识库管理流程结束
+builder.add_edge("knowledge_management", END)
 
 # 编译图
 main_graph = builder.compile()

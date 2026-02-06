@@ -11,7 +11,7 @@ from typing import Callable, Optional
 from tools.knowledge_indexer import KnowledgeIndexer
 from graphs.state_knowledge import FileMetadata, DocumentSummary
 from graphs.nodes.knowledge_manager_nodes import extract_summary_node
-from utils.file.file import FileOps
+from utils.file.file import FileOps, File
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
 
