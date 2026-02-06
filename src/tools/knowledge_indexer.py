@@ -5,6 +5,7 @@
 import os
 import json
 import hashlib
+import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,10 @@ from graphs.state_knowledge import (
     KnowledgeIndex,
     KnowledgeLibrary
 )
+
+# 配置日志
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class KnowledgeIndexer:
@@ -276,6 +281,12 @@ class KnowledgeIndexer:
             匹配的索引列表
         """
         results = []
+        query_lower = query.lower()
+
+        logger.info(f"[知识库搜索] 开始搜索")
+        logger.info(f"  查询词: {query[:100]}...")
+        logger.info(f"  方向过滤: {direction}")
+        logger.info(f"  可用索引总数: {len(self.library.indices)}")
 
         for index in self.library.indices.values():
             # 过滤不启用的索引
@@ -288,36 +299,66 @@ class KnowledgeIndexer:
 
             # 计算匹配分数
             score = 0.0
-            query_lower = query.lower()
+            match_details = []
 
             # 检查标签匹配
+            tag_matches = 0
             for tag in index.search_tags:
                 if query_lower in tag.lower():
                     score += 1.0
+                    tag_matches += 1
+            if tag_matches > 0:
+                match_details.append(f"标签匹配{tag_matches}次")
 
             # 检查摘要匹配
             if query_lower in index.content_summary.full_summary.lower():
                 score += 0.5
+                match_details.append("摘要匹配")
 
             # 检查章节匹配
+            chapter_matches = 0
             for chapter in index.content_summary.key_chapters:
                 if query_lower in chapter.summary.lower():
                     score += 0.3
+                    chapter_matches += 1
+            if chapter_matches > 0:
+                match_details.append(f"章节匹配{chapter_matches}次")
 
             # 检查关键词匹配
+            tech_kw_matches = 0
             for keyword in index.content_summary.technical_keywords:
                 if query_lower in keyword.lower():
                     score += 0.4
+                    tech_kw_matches += 1
 
+            comm_kw_matches = 0
             for keyword in index.content_summary.commercial_keywords:
                 if query_lower in keyword.lower():
                     score += 0.4
+                    comm_kw_matches += 1
+
+            if tech_kw_matches > 0:
+                match_details.append(f"技术关键词匹配{tech_kw_matches}次")
+            if comm_kw_matches > 0:
+                match_details.append(f"商务关键词匹配{comm_kw_matches}次")
 
             if score > 0:
                 results.append((score, index))
+                logger.info(f"  ✅ 匹配成功: {index.metadata.file_name[:40]}... (分数: {score:.1f})")
+                logger.info(f"     匹配详情: {', '.join(match_details)}")
+            else:
+                logger.debug(f"  ❌ 未匹配: {index.metadata.file_name[:40]}... (分数: {score:.1f})")
 
         # 按分数排序
         results.sort(key=lambda x: x[0], reverse=True)
+
+        logger.info(f"[知识库搜索] 搜索完成")
+        logger.info(f"  匹配结果数: {len(results)}")
+        if results:
+            logger.info(f"  Top 3 结果:")
+            for idx, (score, idx_obj) in enumerate(results[:3], 1):
+                logger.info(f"    {idx}. {idx_obj.metadata.file_name} - 分数: {score:.1f}")
+        logger.info(f"  返回 Top {top_k} 结果")
 
         # 返回 top_k 个结果
         return [idx for score, idx in results[:top_k]]
