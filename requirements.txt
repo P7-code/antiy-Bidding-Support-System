@@ -17,7 +17,8 @@ reportlab==4.2.5
 
 # === 数据处理 ===
 pydantic==2.12.3
-numpy==2.2.6
+numpy
+pandas
 openpyxl==3.1.5
 
 # === 网络和编码 ===

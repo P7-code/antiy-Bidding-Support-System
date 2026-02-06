@@ -34,6 +34,10 @@ venv.bak/
 *.swo
 *~
 .DS_Store
+#知识库文件
+
+
+datafiles/
 
 # Environment variables (contains sensitive data)
 .env
@@ -60,7 +64,12 @@ htmlcov/
 .streamlit/secrets.toml
 
 # Assets (user uploaded files)
-assets/knowledge_base/*
+# 使用 Git LFS 管理大文件
+assets/knowledge_base/**/*
 !assets/knowledge_base/.gitkeep
 assets/temp/*
 !assets/temp/.gitkeep
+
+# Datafiles (用户上传的知识文档)
+datafiles/**/*
+!datafiles/.gitkeep

@@ -37,6 +37,7 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import shutil
+from src.knowledge_management import show_knowledge_management_page
 
 
 # 页面配置
@@ -426,7 +427,7 @@ def main():
     
     # 侧边栏
     with st.sidebar:
-        st.markdown("## 📚 知识库管理")
+        st.markdown("## 🎯 功能导航")
         
         # 知识库路径配置
         kb_path = st.text_input(
@@ -436,7 +437,8 @@ def main():
         )
         st.session_state['kb_path'] = kb_path
         
-        # 知识库操作按钮
+        st.markdown("---")
+        st.markdown("## 📚 知识库")
         col_kb1, col_kb2 = st.columns(2)
         with col_kb1:
             if st.button("🔄 刷新索引", key="refresh_kb", use_container_width=True):
@@ -472,7 +474,7 @@ def main():
     # ====== 功能选择区域 ======
     st.markdown("---")
     
-    col_func1, col_func2 = st.columns(2)
+    col_func1, col_func2, col_func3 = st.columns(3)
     
     with col_func1:
         if st.button(
@@ -496,6 +498,17 @@ def main():
             st.session_state['mode_selected'] = True
             st.rerun()
     
+    with col_func3:
+        if st.button(
+            "📚 知识库管理",
+            key="btn_knowledge_mode",
+            type="primary",
+            use_container_width=True
+        ):
+            st.session_state['workflow_type'] = 'knowledge'
+            st.session_state['mode_selected'] = True
+            st.rerun()
+    
     # 初始化状态
     if 'mode_selected' not in st.session_state:
         st.session_state['mode_selected'] = False
@@ -506,7 +519,11 @@ def main():
     if st.session_state.get('mode_selected', False):
         workflow_type = st.session_state['workflow_type']
         
-        if workflow_type == 'check':
+        if workflow_type == 'knowledge':
+            # ====== 知识库管理页面 ======
+            show_knowledge_management_page(kb_path)
+        
+        elif workflow_type == 'check':
             # ====== 投标文件检查模式 ======
             st.markdown("---")
             st.markdown('<h2 class="section-header">📊 投标文件检查</h2>', unsafe_allow_html=True)

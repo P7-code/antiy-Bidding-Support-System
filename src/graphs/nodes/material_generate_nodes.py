@@ -36,6 +36,7 @@ from graphs.state_materials import (
     TechnicalMaterialGenerateOutput
 )
 from tools.knowledge_base_tool import KnowledgeBaseTool
+from tools.knowledge_indexer import KnowledgeIndexer
 from graphs.node import call_llm
 
 
@@ -103,40 +104,38 @@ def knowledge_base_search_node(
     """
     ctx = runtime.context
 
-    # 初始化知识库工具
-    kb_tool = KnowledgeBaseTool(state.knowledge_base_path)
-
-    # 扫描知识库目录
-    kb_tool.scan_directory()
-
+    # 初始化知识库索引工具
+    indexer = KnowledgeIndexer(state.knowledge_base_path)
+    
     # 执行搜索
-    search_results = kb_tool.search(state.query, top_k=5)
+    search_indices = indexer.search_indices(state.query, direction="both", top_k=5)
 
-    # 标注素材出处
-    for result in search_results:
-        result['source_type'] = 'local_knowledge_base'
-        result['source_doc'] = result.get('source', '')
-
-        # 尝试提取页码信息
-        # 方法1：从内容中提取页码标记（如果有）
-        content = result.get('content', '')
-        page_match = re.search(r'第\s*(\d+)\s*页', content[:500])
-        if page_match:
-            result['source_page'] = page_match.group(1)
-        else:
-            # 方法2：从文件路径中提取（如果是PDF）
-            file_path = result.get('path', '')
-            if file_path.lower().endswith('.pdf'):
-                # 简单的页码估算：基于内容长度
-                # 假设每页约500字
-                estimated_page = min(len(content) // 500 + 1, 999)
-                result['source_page'] = f"约第{estimated_page}页"
-            else:
-                result['source_page'] = "N/A"
+    # 格式化搜索结果
+    formatted_results = []
+    for index in search_indices:
+        formatted_result = {
+            'content': index.content_summary.full_summary,
+            'source': index.metadata.file_path,
+            'source_type': 'local_knowledge_base',
+            'source_doc': index.metadata.file_name,
+            'source_page': 'N/A',
+            'score': index.quality_score,
+            'metadata': {
+                'file_hash': index.id,
+                'file_size': index.metadata.file_size,
+                'file_type': index.metadata.file_type,
+                'indexed_at': index.metadata.indexed_at,
+                'updated_at': index.metadata.updated_at,
+                'tags': index.search_tags,
+                'direction': index.direction
+            }
+        }
+        
+        formatted_results.append(formatted_result)
 
     return KnowledgeBaseSearchOutput(
-        search_results=search_results,
-        has_local_knowledge=len(search_results) > 0
+        search_results=formatted_results,
+        has_local_knowledge=len(formatted_results) > 0
     )
 
 
@@ -152,36 +151,38 @@ def commercial_kb_search_node(
     """
     ctx = runtime.context
 
-    # 初始化知识库工具
-    kb_tool = KnowledgeBaseTool(state.knowledge_base_path)
+    # 初始化知识库索引工具
+    indexer = KnowledgeIndexer(state.knowledge_base_path)
+    
+    # 执行搜索（使用商务要求作为查询）
+    search_indices = indexer.search_indices(state.commercial_requirements, direction="commercial", top_k=5)
 
-    # 扫描知识库目录
-    kb_tool.scan_directory()
-
-    # 执行搜索
-    search_results = kb_tool.search(state.commercial_requirements, top_k=5)
-
-    # 标注素材出处
-    for result in search_results:
-        result['source_type'] = 'local_knowledge_base'
-        result['source_doc'] = result.get('source', '')
-
-        # 尝试提取页码信息
-        content = result.get('content', '')
-        page_match = re.search(r'第\s*(\d+)\s*页', content[:500])
-        if page_match:
-            result['source_page'] = page_match.group(1)
-        else:
-            file_path = result.get('path', '')
-            if file_path.lower().endswith('.pdf'):
-                estimated_page = min(len(content) // 500 + 1, 999)
-                result['source_page'] = f"约第{estimated_page}页"
-            else:
-                result['source_page'] = "N/A"
+    # 格式化搜索结果
+    formatted_results = []
+    for index in search_indices:
+        formatted_result = {
+            'content': index.content_summary.full_summary,
+            'source': index.metadata.file_path,
+            'source_type': 'local_knowledge_base',
+            'source_doc': index.metadata.file_name,
+            'source_page': 'N/A',
+            'score': index.quality_score,
+            'metadata': {
+                'file_hash': index.id,
+                'file_size': index.metadata.file_size,
+                'file_type': index.metadata.file_type,
+                'indexed_at': index.metadata.indexed_at,
+                'updated_at': index.metadata.updated_at,
+                'tags': index.search_tags,
+                'direction': index.direction
+            }
+        }
+        
+        formatted_results.append(formatted_result)
 
     return CommercialKBSearchOutput(
-        commercial_kb_results=search_results,
-        has_local_knowledge=len(search_results) > 0
+        commercial_kb_results=formatted_results,
+        has_local_knowledge=len(formatted_results) > 0
     )
 
 
@@ -197,36 +198,38 @@ def technical_kb_search_node(
     """
     ctx = runtime.context
 
-    # 初始化知识库工具
-    kb_tool = KnowledgeBaseTool(state.knowledge_base_path)
+    # 初始化知识库索引工具
+    indexer = KnowledgeIndexer(state.knowledge_base_path)
+    
+    # 执行搜索（使用技术要求作为查询）
+    search_indices = indexer.search_indices(state.technical_requirements, direction="technical", top_k=5)
 
-    # 扫描知识库目录
-    kb_tool.scan_directory()
-
-    # 执行搜索
-    search_results = kb_tool.search(state.technical_requirements, top_k=5)
-
-    # 标注素材出处
-    for result in search_results:
-        result['source_type'] = 'local_knowledge_base'
-        result['source_doc'] = result.get('source', '')
-
-        # 尝试提取页码信息
-        content = result.get('content', '')
-        page_match = re.search(r'第\s*(\d+)\s*页', content[:500])
-        if page_match:
-            result['source_page'] = page_match.group(1)
-        else:
-            file_path = result.get('path', '')
-            if file_path.lower().endswith('.pdf'):
-                estimated_page = min(len(content) // 500 + 1, 999)
-                result['source_page'] = f"约第{estimated_page}页"
-            else:
-                result['source_page'] = "N/A"
+    # 格式化搜索结果
+    formatted_results = []
+    for index in search_indices:
+        formatted_result = {
+            'content': index.content_summary.full_summary,
+            'source': index.metadata.file_path,
+            'source_type': 'local_knowledge_base',
+            'source_doc': index.metadata.file_name,
+            'source_page': 'N/A',
+            'score': index.quality_score,
+            'metadata': {
+                'file_hash': index.id,
+                'file_size': index.metadata.file_size,
+                'file_type': index.metadata.file_type,
+                'indexed_at': index.metadata.indexed_at,
+                'updated_at': index.metadata.updated_at,
+                'tags': index.search_tags,
+                'direction': index.direction
+            }
+        }
+        
+        formatted_results.append(formatted_result)
 
     return TechnicalKBSearchOutput(
-        technical_kb_results=search_results,
-        has_local_knowledge=len(search_results) > 0
+        technical_kb_results=formatted_results,
+        has_local_knowledge=len(formatted_results) > 0
     )
 
 
