@@ -10,16 +10,17 @@ from tools.knowledge_indexer import KnowledgeIndexer
 from tools.knowledge_scheduler import get_scheduler, start_scheduler, stop_scheduler
 
 
-def render_knowledge_management_page():
-    """渲染知识库管理页面"""
+def show_knowledge_management_page(kb_path: str):
+    """
+    显示知识库管理页面
+    
+    Args:
+        kb_path: 知识库路径
+    """
     st.markdown('<h1 class="main-header">📚 知识库管理</h1>', unsafe_allow_html=True)
 
-    # 初始化会话状态
-    if 'indexer' not in st.session_state:
-        st.session_state.indexer = KnowledgeIndexer()
-
-    if 'scheduler_started' not in st.session_state:
-        st.session_state.scheduler_started = False
+    # 初始化知识库索引器
+    indexer = KnowledgeIndexer(kb_path)
 
     # 显示选项卡
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -31,26 +32,25 @@ def render_knowledge_management_page():
 
     # Tab 1: 知识库概览
     with tab1:
-        render_overview_tab()
+        render_overview_tab(indexer)
 
     # Tab 2: 文件索引
     with tab2:
-        render_files_tab()
+        render_files_tab(indexer, kb_path)
 
     # Tab 3: 编辑索引
     with tab3:
-        render_edit_tab()
+        render_edit_tab(indexer)
 
     # Tab 4: 定时任务
     with tab4:
-        render_scheduler_tab()
+        render_scheduler_tab(indexer, kb_path)
 
 
-def render_overview_tab():
+def render_overview_tab(indexer: KnowledgeIndexer):
     """渲染概览标签页"""
     st.markdown('<h2 class="section-header">📊 知识库概览</h2>', unsafe_allow_html=True)
 
-    indexer = st.session_state.indexer
     stats = indexer.get_statistics()
 
     # 统计卡片
@@ -127,11 +127,10 @@ def render_overview_tab():
     st.markdown(f"**索引版本**: {stats.get('version', 'N/A')}")
 
 
-def render_files_tab():
+def render_files_tab(indexer: KnowledgeIndexer, kb_path: str):
     """渲染文件索引标签页"""
     st.markdown('<h2 class="section-header">📄 文件索引列表</h2>', unsafe_allow_html=True)
 
-    indexer = st.session_state.indexer
     indices = indexer.get_all_indices()
 
     # 搜索和过滤
@@ -263,11 +262,10 @@ def render_files_tab():
             st.info("请将文件上传到 datafiles 目录，然后点击扫描")
 
 
-def render_edit_tab():
+def render_edit_tab(indexer: KnowledgeIndexer):
     """渲染编辑索引标签页"""
     st.markdown('<h2 class="section-header">✏️ 编辑索引</h2>', unsafe_allow_html=True)
 
-    indexer = st.session_state.indexer
     indices = indexer.get_all_indices()
 
     # 选择要编辑的索引
@@ -361,7 +359,7 @@ def render_edit_tab():
                 st.error("❌ 索引更新失败")
 
 
-def render_scheduler_tab():
+def render_scheduler_tab(indexer: KnowledgeIndexer, kb_path: str):
     """渲染定时任务标签页"""
     st.markdown('<h2 class="section-header">⚙️ 定时任务配置</h2>', unsafe_allow_html=True)
 
